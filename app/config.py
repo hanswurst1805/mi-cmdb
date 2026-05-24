@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_chat_model: str = "anthropic/claude-sonnet-4-6"
     openrouter_embedding_model: str = "openai/text-embedding-3-small"
+    admin_username: str = "admin"
+    admin_password: str = "changeme"
     secret_key: str = "changeme"
     access_token_expire_minutes: int = 60
 
