@@ -3,5 +3,6 @@ micb.kiste.org {
 }
 
 ocs.kiste.org {
+    redir / /ocsreports/ 302
     reverse_proxy ocs:80
 }
