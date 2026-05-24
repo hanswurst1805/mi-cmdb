@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Netzwerke – Mini-CMDB{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-diagram-3 me-2"></i>Netzwerke</h2>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i>Neues Netzwerk
+  </button>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Name</th><th>CIDR</th><th>Gateway</th><th>Standort</th><th>IPs</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for n in networks %}
+        <tr>
+          <td class="fw-semibold">{{ n.name }}</td>
+          <td><code>{{ n.cidr }}</code></td>
+          <td>{{ n.gateway or '–' }}</td>
+          <td>{{ n.location or '–' }}</td>
+          <td>{{ n.ip_count }}</td>
+          <td><a href="/networks/{{ n.id }}" class="btn btn-sm btn-outline-secondary">Details</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Keine Netzwerke gefunden</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="post" action="/networks">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Neues Netzwerk</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body row g-3">
+          <div class="col-12"><label class="form-label">Name *</label>
+            <input type="text" name="name" class="form-control" required></div>
+          <div class="col-md-8"><label class="form-label">CIDR *</label>
+            <input type="text" name="cidr" class="form-control" placeholder="192.168.1.0/24" required></div>
+          <div class="col-md-4"><label class="form-label">Gateway</label>
+            <input type="text" name="gateway" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Standort</label>
+            <input type="text" name="location" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Beschreibung</label>
+            <textarea name="description" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

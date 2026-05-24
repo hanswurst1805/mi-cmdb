@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}KI-Assistent – Mini-CMDB{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-chat-dots me-2"></i>KI-Assistent</h2>
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0" style="min-height: 500px;">
+      <div class="card-body d-flex flex-column" style="height: 500px;">
+        <div id="chat-messages" class="flex-grow-1 overflow-auto mb-3">
+          <div class="text-muted text-center mt-5">
+            <i class="bi bi-robot fs-1"></i>
+            <p class="mt-2">Stelle eine Frage zu deiner Infrastruktur.<br>
+            <small>z.B. "Welche Server laufen unter Ubuntu?" oder "Zeige mir alle Server des ops-teams"</small></p>
+          </div>
+        </div>
+        <div class="input-group">
+          <input type="text" id="chat-input" class="form-control" placeholder="Frage eingeben…" autocomplete="off">
+          <button class="btn btn-primary" id="send-btn">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-transparent fw-semibold">Beispielfragen</div>
+      <div class="list-group list-group-flush">
+        {% set examples = [
+          "Welche Server laufen unter Ubuntu?",
+          "Zeige mir alle aktiven Server mit mehr als 16 GB RAM",
+          "Welche Maschinen gehören dem ops-team?",
+          "Welche Netzwerke gibt es in Berlin?",
+          "Welche Server sind dekommissioniert?"
+        ] %}
+        {% for ex in examples %}
+        <button class="list-group-item list-group-item-action example-question text-start">
+          <i class="bi bi-question-circle me-2 text-muted"></i>{{ ex }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const messagesEl = document.getElementById('chat-messages');
+const inputEl = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+
+function appendMessage(role, text, sources) {
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `d-flex mb-3 ${isUser ? 'justify-content-end' : ''}`;
+  let sourcesHtml = '';
+  if (sources && sources.length) {
+    sourcesHtml = `<div class="mt-2 small text-muted">
+      <i class="bi bi-journals me-1"></i>Quellen: ${sources.map(s => `<span class="badge text-bg-light text-dark me-1">${s.name} (${Math.round(s.score*100)}%)</span>`).join('')}
+    </div>`;
+  }
+  div.innerHTML = `
+    <div class="p-3 rounded-3 ${isUser ? 'bg-primary text-white' : 'bg-light'}" style="max-width:85%">
+      <div style="white-space:pre-wrap">${text}</div>
+      ${sourcesHtml}
+    </div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function sendMessage(msg) {
+  if (!msg.trim()) return;
+  appendMessage('user', msg);
+  inputEl.value = '';
+  sendBtn.disabled = true;
+
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'd-flex mb-3';
+  loadingDiv.innerHTML = '<div class="p-3 rounded-3 bg-light"><div class="spinner-border spinner-border-sm me-2"></div>Denke nach…</div>';
+  messagesEl.appendChild(loadingDiv);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const res = await fetch('/api/v1/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    const data = await res.json();
+    messagesEl.removeChild(loadingDiv);
+    appendMessage('assistant', data.answer, data.sources);
+  } catch (e) {
+    messagesEl.removeChild(loadingDiv);
+    appendMessage('assistant', 'Fehler beim Verbinden mit dem Assistenten.');
+  }
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(inputEl.value); });
+document.querySelectorAll('.example-question').forEach(btn => {
+  btn.addEventListener('click', () => sendMessage(btn.textContent.trim()));
+});
+</script>
+{% endblock %}

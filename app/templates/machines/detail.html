@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ machine.fqdn }} – Mini-CMDB{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/machines">Maschinen</a></li>
+    <li class="breadcrumb-item active">{{ machine.fqdn }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h2 class="mb-1">{{ machine.fqdn }}</h2>
+    <span class="badge text-bg-{% if machine.status.value == 'active' %}success{% elif machine.status.value == 'inactive' %}secondary{% else %}danger{% endif %} fs-6">
+      {{ machine.status.value }}
+    </span>
+  </div>
+  <div>
+    <a href="/machines/{{ machine.id }}/anomalies" class="btn btn-outline-warning me-2">
+      <i class="bi bi-exclamation-triangle me-1"></i>Anomalien
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-transparent fw-semibold">Details</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">Hostname</span><strong>{{ machine.hostname }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">OS</span><strong>{{ machine.os or '–' }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">RAM</span><strong>{{ machine.ram_gb ~ ' GB' if machine.ram_gb else '–' }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">CPU-Kerne</span><strong>{{ machine.cpu_cores or '–' }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">Owner</span><strong>{{ machine.owner or '–' }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">Erstellt</span><strong>{{ machine.created_at.strftime('%d.%m.%Y %H:%M') }}</strong>
+        </li>
+      </ul>
+    </div>
+    {% if machine.description %}
+    <div class="card shadow-sm border-0 mt-3">
+      <div class="card-header bg-transparent fw-semibold">Beschreibung</div>
+      <div class="card-body">{{ machine.description }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-transparent fw-semibold">Netzwerkkarten & IPs</div>
+      {% if machine.nics %}
+      <div class="list-group list-group-flush">
+        {% for nic in machine.nics %}
+        <div class="list-group-item">
+          <div class="fw-semibold"><i class="bi bi-ethernet me-1"></i>{{ nic.name }}
+            {% if nic.mac_address %}<small class="text-muted ms-2">{{ nic.mac_address }}</small>{% endif %}
+          </div>
+          {% for ip in nic.ip_addresses if not ip.deleted_at %}
+          <div class="ms-3 text-muted small">
+            <i class="bi bi-dot"></i>{{ ip.address }}
+            <span class="badge text-bg-light text-dark ms-1">{{ ip.type.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card-body text-muted">Keine NICs vorhanden</div>
+      {% endif %}
+    </div>
+
+    {% if similar %}
+    <div class="card shadow-sm border-0 mt-3">
+      <div class="card-header bg-transparent fw-semibold">Ähnliche Maschinen</div>
+      <ul class="list-group list-group-flush">
+        {% for s in similar %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="/machines/{{ s.machine.id }}" class="text-decoration-none">{{ s.machine.fqdn }}</a>
+          <span class="badge text-bg-light text-dark">{{ (s.score * 100)|int }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

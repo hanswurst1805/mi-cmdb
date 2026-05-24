@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Maschinen – Mini-CMDB{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-pc-display me-2"></i>Maschinen</h2>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i>Neue Maschine
+  </button>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="os" class="form-control" placeholder="OS filtern…" value="{{ filter_os or '' }}">
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">Alle Status</option>
+          <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Aktiv</option>
+          <option value="inactive" {% if filter_status == 'inactive' %}selected{% endif %}>Inaktiv</option>
+          <option value="decommissioned" {% if filter_status == 'decommissioned' %}selected{% endif %}>Dekommissioniert</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="text" name="owner" class="form-control" placeholder="Owner filtern…" value="{{ filter_owner or '' }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-secondary w-100">Filtern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>FQDN</th><th>OS</th><th>RAM</th><th>CPUs</th><th>Status</th><th>Owner</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in machines %}
+        <tr>
+          <td><a href="/machines/{{ m.id }}" class="fw-semibold text-decoration-none">{{ m.fqdn }}</a></td>
+          <td>{{ m.os or '–' }}</td>
+          <td>{{ m.ram_gb ~ ' GB' if m.ram_gb else '–' }}</td>
+          <td>{{ m.cpu_cores or '–' }}</td>
+          <td>
+            <span class="badge text-bg-{% if m.status.value == 'active' %}success{% elif m.status.value == 'inactive' %}secondary{% else %}danger{% endif %}">
+              {{ m.status.value }}
+            </span>
+          </td>
+          <td>{{ m.owner or '–' }}</td>
+          <td><a href="/machines/{{ m.id }}" class="btn btn-sm btn-outline-secondary">Details</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Keine Maschinen gefunden</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="post" action="/machines">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Neue Maschine</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body row g-3">
+          <div class="col-12"><label class="form-label">FQDN *</label>
+            <input type="text" name="fqdn" class="form-control" required></div>
+          <div class="col-12"><label class="form-label">Hostname *</label>
+            <input type="text" name="hostname" class="form-control" required></div>
+          <div class="col-md-6"><label class="form-label">OS</label>
+            <input type="text" name="os" class="form-control"></div>
+          <div class="col-md-3"><label class="form-label">RAM (GB)</label>
+            <input type="number" name="ram_gb" class="form-control"></div>
+          <div class="col-md-3"><label class="form-label">CPUs</label>
+            <input type="number" name="cpu_cores" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Owner</label>
+            <input type="text" name="owner" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Beschreibung</label>
+            <textarea name="description" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
