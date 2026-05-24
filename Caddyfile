@@ -3,6 +3,9 @@ micb.kiste.org {
 }
 
 ocs.kiste.org {
+    basicauth {
+        {env.OCS_AUTH_USER} {env.OCS_AUTH_HASH}
+    }
     redir / /ocsreports/ 302
     reverse_proxy ocs:80
 }

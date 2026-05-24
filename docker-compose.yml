@@ -10,6 +10,13 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    env_file: .env
+    entrypoint: >
+      sh -c "
+        export OCS_AUTH_USER=$${ADMIN_USERNAME} &&
+        export OCS_AUTH_HASH=$$(caddy hash-password --plaintext $${ADMIN_PASSWORD}) &&
+        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+      "
     depends_on:
       app:
         condition: service_healthy
