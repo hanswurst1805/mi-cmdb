@@ -1,3 +1,7 @@
 micb.kiste.org {
     reverse_proxy app:8000
 }
+
+ocs.kiste.org {
+    reverse_proxy ocs:80
+}

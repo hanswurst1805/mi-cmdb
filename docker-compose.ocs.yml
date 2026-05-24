@@ -20,8 +20,6 @@ services:
   ocs:
     image: ocsinventory/ocsinventory-docker-image:2.12
     restart: unless-stopped
-    ports:
-      - "8080:80"
     environment:
       OCS_DB_SERVER: ocs-db
       OCS_DB_PORT: 3306
