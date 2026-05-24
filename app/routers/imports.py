@@ -19,10 +19,12 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models.machine import Machine
 from app.models.security_audit import SecurityAudit
@@ -98,6 +100,89 @@ def import_ocs(
         "action": "created" if created else "updated",
         "machine_id": str(machine.id),
         "fqdn": machine.fqdn,
+    }
+
+
+# ── OCS Inventory Sync ───────────────────────────────────────────────────────
+
+def _ocs_map_machine(hw: dict, db: Session, background_tasks: BackgroundTasks) -> dict:
+    """Mapped einen OCS-Hardware-Eintrag auf ein Machine-Objekt."""
+    hostname = hw.get("NAME") or hw.get("name") or "unknown"
+    fqdn = hostname if "." in hostname else f"{hostname}.local"
+    osname = hw.get("OSNAME") or hw.get("osname") or ""
+    osver  = hw.get("OSVERSION") or hw.get("osversion") or ""
+    os_str = " ".join(filter(None, [osname, osver])) or None
+    memory = hw.get("MEMORY") or hw.get("memory")
+    ram_gb = round(int(memory) / 1024) if memory else None
+    processorn = int(hw.get("PROCESSORN") or hw.get("processorn") or 1)
+    processorc = int(hw.get("PROCESSORC") or hw.get("processorc") or 1)
+    cpu_cores  = processorn * processorc or None
+
+    machine = db.query(Machine).filter(
+        Machine.fqdn == fqdn, Machine.deleted_at.is_(None)
+    ).first()
+    created = machine is None
+    if created:
+        machine = Machine(fqdn=fqdn, hostname=hostname)
+        db.add(machine)
+
+    machine.hostname = hostname
+    if os_str:
+        machine.os = os_str
+    if ram_gb:
+        machine.ram_gb = ram_gb
+    if cpu_cores:
+        machine.cpu_cores = cpu_cores
+    machine.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(machine)
+    background_tasks.add_task(index_machine, machine, db)
+    return {"fqdn": fqdn, "action": "created" if created else "updated"}
+
+
+@router.post("/ocs/sync")
+def sync_ocs(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Holt alle Maschinen vom OCS-Inventory-Server und importiert sie.
+    Verbindungsdaten kommen aus den Env-Variablen OCS_URL / OCS_USER / OCS_PASSWORD.
+    """
+    base_url = settings.ocs_url.rstrip("/")
+    auth = (settings.ocs_user, settings.ocs_password)
+
+    try:
+        resp = httpx.get(
+            f"{base_url}/ocsapi/v1/computers",
+            auth=auth,
+            timeout=30,
+            headers={"Accept": "application/json"},
+        )
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"OCS-Server nicht erreichbar: {e}")
+
+    data = resp.json()
+    computers = data if isinstance(data, list) else data.get("computers", data.get("data", []))
+
+    results = []
+    for computer in computers:
+        hw = computer.get("hardware") or computer
+        try:
+            result = _ocs_map_machine(hw, db, background_tasks)
+            results.append(result)
+        except Exception as e:
+            results.append({"fqdn": hw.get("NAME", "?"), "error": str(e)})
+
+    created  = sum(1 for r in results if r.get("action") == "created")
+    updated  = sum(1 for r in results if r.get("action") == "updated")
+    errors   = sum(1 for r in results if "error" in r)
+
+    return {
+        "total": len(results),
+        "created": created,
+        "updated": updated,
+        "errors": errors,
+        "details": results,
     }
 
 

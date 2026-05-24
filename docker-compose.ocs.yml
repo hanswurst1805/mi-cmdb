@@ -1,0 +1,44 @@
+services:
+  ocs-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ocsroot
+      MYSQL_DATABASE: ocsweb
+      MYSQL_USER: ocs
+      MYSQL_PASSWORD: ocs
+    volumes:
+      - ocs_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uocs", "-pocs"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cmdb_net
+
+  ocs:
+    image: ocsinventory/ocsinventory-docker-image:2.12
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      OCS_DB_SERVER: ocs-db
+      OCS_DB_PORT: 3306
+      OCS_DB_NAME: ocsweb
+      OCS_DB_USER: ocs
+      OCS_DB_PASS: ocs
+      OCS_SSL_ENABLED: 0
+    depends_on:
+      ocs-db:
+        condition: service_healthy
+    networks:
+      - cmdb_net
+
+networks:
+  cmdb_net:
+    external: true
+    name: mi-cmdb_cmdb_net
+
+volumes:
+  ocs_mysql:
