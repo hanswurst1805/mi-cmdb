@@ -3,7 +3,7 @@ micb.kiste.org {
 }
 
 ocs.kiste.org {
-    basicauth {
+    basic_auth {
         {env.OCS_AUTH_USER} {env.OCS_AUTH_HASH}
     }
     redir / /ocsreports/ 302

@@ -14,7 +14,7 @@ services:
     entrypoint: >
       sh -c "
         export OCS_AUTH_USER=$${ADMIN_USERNAME} &&
-        export OCS_AUTH_HASH=$$(caddy hash-password --plaintext $${ADMIN_PASSWORD}) &&
+        export OCS_AUTH_HASH=$$(printf '%s' $${ADMIN_PASSWORD} | caddy hash-password) &&
         caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
       "
     depends_on:
