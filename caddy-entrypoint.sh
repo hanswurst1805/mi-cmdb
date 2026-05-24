@@ -1,7 +1,11 @@
 #!/bin/sh
 set -e
 
-HASH=$(printf '%s' "${ADMIN_PASSWORD}" | caddy hash-password)
+# htpasswd fuer bcrypt-Hash-Generierung installieren (klein, schnell)
+apk add --no-cache apache2-utils > /dev/null 2>&1
+
+# bcrypt-Hash aus ADMIN_PASSWORD generieren ($2y$ Format, von Caddy akzeptiert)
+HASH=$(htpasswd -bnB "${ADMIN_USERNAME}" "${ADMIN_PASSWORD}" | cut -d: -f2 | tr -d '\n\r')
 
 cat > /tmp/Caddyfile << EOF
 micb.kiste.org {
