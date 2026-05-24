@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
-from app.routers import auth, ip_addresses, login, machines, networks, rag, ui
+from app.routers import auth, imports, ip_addresses, login, machines, networks, rag, ui
 
 app = FastAPI(
     title="Mini-CMDB",
@@ -26,6 +26,7 @@ async def require_login(request: Request, call_next):
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
 app.include_router(login.router)
+app.include_router(imports.router)
 app.include_router(machines.router)
 app.include_router(networks.router)
 app.include_router(ip_addresses.router)

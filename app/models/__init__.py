@@ -3,5 +3,6 @@ from app.models.ip_address import IPAddress
 from app.models.machine import Machine
 from app.models.network import Network
 from app.models.nic import NIC
+from app.models.security_audit import SecurityAudit
 
-__all__ = ["Machine", "Network", "NIC", "IPAddress", "APIToken"]
+__all__ = ["Machine", "Network", "NIC", "IPAddress", "APIToken", "SecurityAudit"]

@@ -34,6 +34,7 @@ class Machine(Base):
     deleted_at = Column(DateTime, nullable=True, index=True)
 
     nics = relationship("NIC", back_populates="machine", cascade="all, delete-orphan")
+    security_audits = relationship("SecurityAudit", back_populates="machine", cascade="all, delete-orphan", order_by="SecurityAudit.audited_at.desc()")
 
     def to_text(self) -> str:
         """Erzeugt eine Textrepräsentation für das Embedding."""
