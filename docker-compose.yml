@@ -11,7 +11,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - app
+      app:
+        condition: service_healthy
+    networks:
+      - cmdb_net
 
   app:
     build: .
@@ -22,6 +25,14 @@ services:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/docs > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cmdb_net
 
   db:
     image: pgvector/pgvector:pg15
@@ -37,6 +48,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - cmdb_net
+
+networks:
+  cmdb_net:
+    driver: bridge
 
 volumes:
   pgdata:
