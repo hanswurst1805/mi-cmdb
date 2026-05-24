@@ -11,9 +11,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
-
-
 @app.middleware("http")
 async def require_login(request: Request, call_next):
     public_paths = {"/login", "/docs", "/openapi.json", "/redoc"}
@@ -23,6 +20,10 @@ async def require_login(request: Request, call_next):
         return RedirectResponse(url="/login", status_code=302)
     return await call_next(request)
 
+
+# SessionMiddleware muss nach require_login registriert werden,
+# damit sie beim Request zuerst läuft und request.session befüllt
+app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
 app.include_router(login.router)
 app.include_router(machines.router)
