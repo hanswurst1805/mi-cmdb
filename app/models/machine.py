@@ -28,7 +28,7 @@ class Machine(Base):
     status = Column(Enum(MachineStatus), default=MachineStatus.active, nullable=False)
     description = Column(Text)
     owner = Column(String(255))
-    embedding = Column(Vector(1024))
+    embedding = Column(Vector(1536))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime, nullable=True, index=True)

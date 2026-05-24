@@ -18,7 +18,7 @@ class Network(Base):
     gateway = Column(String(50))
     description = Column(Text)
     location = Column(String(255))
-    embedding = Column(Vector(1024))
+    embedding = Column(Vector(1536))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

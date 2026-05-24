@@ -3,8 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = "postgresql://cmdb:cmdb@localhost:5432/cmdb"
-    anthropic_api_key: str = ""
-    voyage_api_key: str = ""
+    openrouter_api_key: str = ""
+    openrouter_chat_model: str = "anthropic/claude-sonnet-4-6"
+    openrouter_embedding_model: str = "openai/text-embedding-3-small"
     secret_key: str = "changeme"
     access_token_expire_minutes: int = 60
 

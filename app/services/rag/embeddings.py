@@ -1,26 +1,29 @@
 from typing import List
 
-import voyageai
+from openai import OpenAI
 
 from app.config import settings
 
-_client: voyageai.Client | None = None
+_client: OpenAI | None = None
 
 
-def _get_client() -> voyageai.Client:
+def _get_client() -> OpenAI:
     global _client
     if _client is None:
-        _client = voyageai.Client(api_key=settings.voyage_api_key)
+        _client = OpenAI(
+            api_key=settings.openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1",
+        )
     return _client
 
 
 def embed_text(text: str) -> List[float]:
-    client = _get_client()
-    result = client.embed([text], model="voyage-2", input_type="document")
-    return result.embeddings[0]
+    response = _get_client().embeddings.create(
+        model=settings.openrouter_embedding_model,
+        input=text,
+    )
+    return response.data[0].embedding
 
 
 def embed_query(query: str) -> List[float]:
-    client = _get_client()
-    result = client.embed([query], model="voyage-2", input_type="query")
-    return result.embeddings[0]
+    return embed_text(query)

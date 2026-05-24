@@ -1,17 +1,20 @@
 from typing import List
 
-import anthropic
+from openai import OpenAI
 
 from app.config import settings
 from app.services.rag.retriever import search_all
 
-_client: anthropic.Anthropic | None = None
+_client: OpenAI | None = None
 
 
-def _get_client() -> anthropic.Anthropic:
+def _get_client() -> OpenAI:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        _client = OpenAI(
+            api_key=settings.openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1",
+        )
     return _client
 
 
@@ -21,13 +24,9 @@ def _format_context(results: List[dict]) -> str:
         item = r["item"]
         score = r["score"]
         if r["type"] == "machine":
-            lines.append(
-                f"[Server, Relevanz {score:.0%}] {item.to_text()}"
-            )
+            lines.append(f"[Server, Relevanz {score:.0%}] {item.to_text()}")
         else:
-            lines.append(
-                f"[Netzwerk, Relevanz {score:.0%}] {item.to_text()}"
-            )
+            lines.append(f"[Netzwerk, Relevanz {score:.0%}] {item.to_text()}")
     return "\n".join(lines)
 
 
@@ -36,7 +35,7 @@ def chat(message: str, db) -> dict:
     context = _format_context(results)
 
     system = (
-        "Du bist ein hilfreicher IT-Infrastruktur-Assistent für eine CMDB (Configuration Management Database). "
+        "Du bist ein hilfreicher IT-Infrastruktur-Assistent für eine CMDB. "
         "Beantworte Fragen ausschließlich auf Basis der bereitgestellten Infrastruktur-Daten. "
         "Wenn die Daten keine Antwort erlauben, sage das klar. "
         "Antworte präzise und strukturiert auf Deutsch."
@@ -47,11 +46,13 @@ def chat(message: str, db) -> dict:
 
 Frage: {message}"""
 
-    response = _get_client().messages.create(
-        model="claude-sonnet-4-6",
+    response = _get_client().chat.completions.create(
+        model=settings.openrouter_chat_model,
         max_tokens=1024,
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
     )
 
     sources = [
@@ -64,7 +65,7 @@ Frage: {message}"""
     ]
 
     return {
-        "answer": response.content[0].text,
+        "answer": response.choices[0].message.content,
         "sources": sources,
     }
 
@@ -84,9 +85,9 @@ def analyze_anomalies(machine, similar_machines: List[dict]) -> str:
         "abweichendes OS, anderer Owner). Fasse kurz und strukturiert zusammen."
     )
 
-    response = _get_client().messages.create(
-        model="claude-sonnet-4-6",
+    response = _get_client().chat.completions.create(
+        model=settings.openrouter_chat_model,
         max_tokens=512,
         messages=[{"role": "user", "content": prompt}],
     )
-    return response.content[0].text
+    return response.choices[0].message.content

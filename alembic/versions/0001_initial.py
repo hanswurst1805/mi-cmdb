@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column("status", sa.Enum("active", "inactive", "decommissioned", name="machinestatus"), nullable=False, server_default="active"),
         sa.Column("description", sa.Text()),
         sa.Column("owner", sa.String(255)),
-        sa.Column("embedding", Vector(1024)),
+        sa.Column("embedding", Vector(1536)),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.Column("deleted_at", sa.DateTime()),
@@ -45,7 +45,7 @@ def upgrade() -> None:
         sa.Column("gateway", sa.String(50)),
         sa.Column("description", sa.Text()),
         sa.Column("location", sa.String(255)),
-        sa.Column("embedding", Vector(1024)),
+        sa.Column("embedding", Vector(1536)),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
     )
