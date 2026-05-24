@@ -1,6 +1,7 @@
 services:
   ocs-db:
     image: mysql:8.0
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ocsroot
@@ -19,6 +20,7 @@ services:
 
   ocs:
     image: ocsinventory/ocsinventory-docker-image:2.12
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       OCS_DB_SERVER: ocs-db
